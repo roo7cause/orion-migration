@@ -7,11 +7,19 @@
 # Base directories with full paths
 ORION_DIR="${HOME}/Library/Application Support/Orion"
 ORION_RC_DIR="${HOME}/Library/Application Support/Orion RC"
+ORION_CONTAINER="${HOME}/Library/Containers/com.kagi.orion"
+ORION_RC_CONTAINER="${HOME}/Library/Containers/com.kagi.orion-rc"
+ORION_WEBKIT="${HOME}/Library/WebKit/com.kagi.kagimacOS"
+ORION_RC_WEBKIT="${HOME}/Library/WebKit/com.kagi.kagimacOS.RC"
+ORION_HTTP="${HOME}/Library/HTTPStorages/com.kagi.kagimacOS"
+ORION_RC_HTTP="${HOME}/Library/HTTPStorages/com.kagi.kagimacOS.RC"
 
 # Print script header
 echo "\x1b[34m=== Orion Browser Migration Tool ===\x1b[0m"
 echo "\x1b[32m[INFO]\x1b[0m Source: $ORION_DIR"
 echo "\x1b[32m[INFO]\x1b[0m Destination: $ORION_RC_DIR"
+echo "\x1b[32m[INFO]\x1b[0m Source Container: $ORION_CONTAINER"
+echo "\x1b[32m[INFO]\x1b[0m Destination Container: $ORION_RC_CONTAINER"
 
 # Validate source directory exists
 if [ ! -d "$ORION_DIR" ]; then
@@ -52,39 +60,57 @@ fi
 # Create destination directory
 mkdir -p "$ORION_RC_DIR"
 
-# Copy profile directories (contains main browser data and extensions)
+# Function to copy a profile with all its data
+function copy_profile() {
+    local src_dir="$1"
+    local profile_name="$2"
+    
+    echo "\x1b[32m[INFO]\x1b[0m Copying profile: $profile_name..."
+    
+    # Create profile directory in destination
+    local dst_dir="$ORION_RC_DIR/$profile_name"
+    mkdir -p "$dst_dir"
+    
+    # Copy profile data
+    echo "\x1b[32m[INFO]\x1b[0m Copying profile data..."
+    cp -rp "$src_dir/." "$dst_dir/"
+    
+    # Copy WebKit data if it exists
+    if [ -d "$ORION_WEBKIT" ]; then
+        echo "\x1b[32m[INFO]\x1b[0m Copying WebKit data..."
+        mkdir -p "$ORION_RC_WEBKIT"
+        cp -rp "$ORION_WEBKIT/." "$ORION_RC_WEBKIT/"
+    fi
+    
+    # Copy HTTP Storage data if it exists
+    if [ -d "$ORION_HTTP" ]; then
+        echo "\x1b[32m[INFO]\x1b[0m Copying HTTP Storage data..."
+        mkdir -p "$ORION_RC_HTTP"
+        cp -rp "$ORION_HTTP/." "$ORION_RC_HTTP/"
+    fi
+    
+    # Copy container data if it exists
+    if [ -d "$ORION_CONTAINER/Data/Library/Application Support/Orion/$profile_name" ]; then
+        echo "\x1b[32m[INFO]\x1b[0m Copying container data..."
+        mkdir -p "$ORION_RC_CONTAINER/Data/Library/Application Support/Orion RC/$profile_name"
+        cp -rp "$ORION_CONTAINER/Data/Library/Application Support/Orion/$profile_name/." "$ORION_RC_CONTAINER/Data/Library/Application Support/Orion RC/$profile_name/"
+    fi
+    
+    echo "\x1b[32m[SUCCESS]\x1b[0m Copied profile: $profile_name"
+}
+
+# Copy UUID profile(s)
 for uuid_dir in "$ORION_DIR"/*-*-*-*-*; do
     if [ -d "$uuid_dir" ]; then
         uuid_name=$(basename "$uuid_dir")
-        echo "\x1b[32m[INFO]\x1b[0m Copying profile directory $uuid_name..."
-        
-        # Ensure Extensions directory exists in destination
-        mkdir -p "$ORION_RC_DIR/$uuid_name/Extensions"
-        
-        # Copy each extension individually to ensure integrity
-        for ext_dir in "$uuid_dir/Extensions"/*; do
-            if [ -d "$ext_dir" ]; then
-                ext_name=$(basename "$ext_dir")
-                echo "\x1b[32m[INFO]\x1b[0m Copying extension: $ext_name"
-                cp -r "$ext_dir" "$ORION_RC_DIR/$uuid_name/Extensions/"
-            fi
-        done
-        
-        # Copy extensions.plist (contains extension settings and activation states)
-        if [ -f "$uuid_dir/Extensions/extensions.plist" ]; then
-            echo "\x1b[32m[INFO]\x1b[0m Copying extensions.plist..."
-            cp "$uuid_dir/Extensions/extensions.plist" "$ORION_RC_DIR/$uuid_name/Extensions/"
-        fi
-        
-        # Copy Extension State (contains extension runtime data)
-        if [ -d "$uuid_dir/Extension State" ]; then
-            echo "\x1b[32m[INFO]\x1b[0m Copying Extension State..."
-            cp -r "$uuid_dir/Extension State" "$ORION_RC_DIR/$uuid_name/"
-        fi
-        
-        echo "\x1b[32m[SUCCESS]\x1b[0m Copied profile directory"
+        copy_profile "$uuid_dir" "$uuid_name"
     fi
 done
+
+# Copy Defaults profile
+if [ -d "$ORION_DIR/Defaults" ]; then
+    copy_profile "$ORION_DIR/Defaults" "Defaults"
+fi
 
 # Function to copy browser data directories and files
 function copy_browser_data() {
@@ -106,11 +132,34 @@ function copy_browser_data() {
 # WebApps: Installed web applications
 # profiles: Profile management data
 # snapshots: Browser state snapshots
-copy_browser_data "Defaults"
+# copy_browser_data "Defaults"
 copy_browser_data "NativeMessagingHosts"
 copy_browser_data "WebApps"
 copy_browser_data "profiles"
 copy_browser_data "snapshots"
+
+# Add this after all profiles are copied
+# Copy container structure
+if [ -d "$ORION_CONTAINER" ]; then
+    echo "\x1b[32m[INFO]\x1b[0m Copying container structure..."
+    mkdir -p "$ORION_RC_CONTAINER"
+    cp -rp "$ORION_CONTAINER/." "$ORION_RC_CONTAINER/"
+fi
+
+# Add this after all profiles are copied
+# Copy additional browser data locations
+echo "\x1b[32m[INFO]\x1b[0m Copying additional browser data..."
+
+# Copy preferences
+if [ -f "${HOME}/Library/Preferences/com.kagi.kagimacOS.plist" ]; then
+    cp -p "${HOME}/Library/Preferences/com.kagi.kagimacOS.plist" "${HOME}/Library/Preferences/com.kagi.kagimacOS.RC.plist"
+fi
+
+# Copy saved state
+if [ -d "${HOME}/Library/Saved Application State/com.kagi.kagimacOS.savedState" ]; then
+    mkdir -p "${HOME}/Library/Saved Application State/com.kagi.kagimacOS.RC.savedState"
+    cp -rp "${HOME}/Library/Saved Application State/com.kagi.kagimacOS.savedState/." "${HOME}/Library/Saved Application State/com.kagi.kagimacOS.RC.savedState/"
+fi
 
 echo "\x1b[34m=== Migration Complete ===\x1b[0m"
 echo "\x1b[32m[INFO]\x1b[0m Please restart Orion RC to see your imported data"
