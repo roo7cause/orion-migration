@@ -24,12 +24,12 @@ This tool migrates the following data:
 
 1. Download the migration script:
 ```bash
-curl -O https://raw.githubusercontent.com/davidschlachter/orion-migration/main/import.zsh
+curl -O https://raw.githubusercontent.com/davidschlachter/orion-migration/main/import_to_rc.zsh
 ```
 
 2. Make the script executable:
 ```bash
-chmod +x import.zsh
+chmod +x import_to_rc.zsh
 ```
 
 ## Usage
@@ -39,7 +39,7 @@ chmod +x import.zsh
 3. Navigate to the directory containing the script
 4. Run the script:
 ```bash
-./import.zsh
+./import_to_rc.zsh
 ```
 5. Launch Orion RC Browser to see your imported data
 
@@ -101,7 +101,7 @@ mv "${HOME}/Library/Application Support/Orion RC_backup" "${HOME}/Library/Applic
 
 ### Script Permission Denied
 ```bash
-chmod +x import.zsh
+chmod +x import_to_rc.zsh
 ```
 
 ## Directory Structure
