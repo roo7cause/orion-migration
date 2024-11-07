@@ -24,7 +24,7 @@ This tool migrates the following data:
 
 1. Download the migration script:
 ```bash
-curl -O https://raw.githubusercontent.com/davidschlachter/orion-migration/main/import_to_rc.zsh
+curl -O https://raw.githubusercontent.com/cybercitizen7/orion-migration/main/import_to_rc.zsh
 ```
 
 2. Make the script executable:
