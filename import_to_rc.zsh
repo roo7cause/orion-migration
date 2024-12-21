@@ -109,12 +109,17 @@ function copy_profile() {
 }
 
 # Copy UUID profile(s)
-for uuid_dir in "$ORION_DIR"/*-*-*-*-*; do
-    if [ -d "$uuid_dir" ]; then
-        uuid_name=$(basename "$uuid_dir")
-        copy_profile "$uuid_dir" "$uuid_name"
-    fi
-done
+uuid_dirs=("$ORION_DIR"/*-*-*-*-*-*)
+if [ -d "${uuid_dirs[1]}" ]; then
+    for uuid_dir in "$ORION_DIR"/*-*-*-*-*-*; do
+        if [ -d "$uuid_dir" ]; then
+            uuid_name=$(basename "$uuid_dir")
+            copy_profile "$uuid_dir" "$uuid_name"
+        fi
+    done
+else
+    echo "${COL_YELLOW}[SKIP]${COL_RESET} No UUID profiles found"
+fi
 
 # Copy Defaults profile
 if [ -d "$ORION_DIR/Defaults" ]; then
